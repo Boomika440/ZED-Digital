@@ -1,0 +1,60 @@
+# Default Configuration for Open-Set Person Re-ID under Low Inter-Class Variance
+# Project: Zed Digital - PS-1
+
+model:
+  backbone: "osnet_compact"       # Options: 'osnet_compact', 'mobilenet_v3_small', 'resnet18_ibn'
+  pretrained: false
+  embedding_dim: 512
+  use_part_attention: true        # Fine-grained spatial part attention for subtle distinguishing cues
+  num_parts: 4                    # Vertical body strips (Head/Collar, Upper Torso/Badge, Lower Torso/Belt, Shoes/Feet)
+  dropout_rate: 0.1
+  neck: "bnneck"                  # Batch Normalization neck for separating metric space and classification hyperplane
+
+loss:
+  margin_loss_type: "subcenter_arcface" # Options: 'arcface', 'cosface', 'subcenter_arcface', 'softmax'
+  margin: 0.35                    # Angular margin m (radians)
+  scale: 30.0                     # Inverse temperature s for hypersphere projection
+  sub_centers: 3                  # Multiple intra-class sub-centers for pose/clothing perturbations
+  use_hard_triplet: true          # Batch-Hard Triplet Mining
+  triplet_margin: 0.3             # Euclidean margin for L2-normalized embeddings
+  lambda_margin: 1.0              # Loss weight for angular margin loss
+  lambda_triplet: 1.0             # Loss weight for batch-hard triplet loss
+  lambda_part: 0.5                # Loss weight for part-level discriminative contrastive loss
+
+dataset:
+  name: "low_variance_curated"    # Options: 'low_variance_curated', 'market1501', 'prcc'
+  data_dir: "./data_storage"
+  img_height: 256
+  img_width: 128
+  num_classes: 120                # Enrolled identities
+  num_unknown_identities: 80      # Unenrolled identities for open-set evaluation
+  samples_per_id: 16
+  batch_p: 8                     # Number of identities per batch
+  batch_k: 4                     # Number of images per identity (batch_size = P * K = 32)
+  num_workers: 2
+
+calibration:
+  method: "evt_weibull"           # Options: 'evt_weibull', 's_norm', 'temperature_platt', 'none'
+  tail_size: 20                   # Extreme Value Theory tail size for Weibull distribution fitting
+  rejection_threshold_far01: 0.72 # Calibrated threshold calibrated at FAR = 1%
+  ambiguity_margin: 0.08          # Top-1 vs Top-2 score margin to reject ambiguous uniform collisions
+  s_norm_k: 10                    # Nearest neighbors for S-Norm gallery score normalization
+
+training:
+  epochs: 40
+  warmup_epochs: 5
+  base_lr: 0.00035
+  min_lr: 0.00001
+  weight_decay: 0.0005
+  device: "cpu"                   # Automatically selects 'cuda' if GPU is available
+  fp16: false
+
+evaluation:
+  target_fars: [0.001, 0.01, 0.05, 0.10] # Target False Accept Rates for DIR calculation
+  save_roc_curve: true
+  save_dir: "./results"
+
+deployment:
+  onnx_model_path: "./weights/open_set_reid.onnx"
+  target_fps: 60
+  max_latency_ms: 15.0

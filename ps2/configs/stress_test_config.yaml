@@ -1,0 +1,49 @@
+# Stress Testing Configuration for PS-2
+# Stress analysis vs. increasing occlusion and crowd density in gate choke-points
+
+stress_test:
+  output_dir: "./results/stress_tests"
+  
+  # Experiment 1: Scaling Crowd Density (5 to 50 concurrent pedestrians in narrow choke-point)
+  density_sweep:
+    person_counts: [5, 10, 15, 20, 25, 30, 40, 50]
+    seq_length: 200
+    repeats_per_setting: 2
+
+  # Experiment 2: Mutual Occlusion Duration Stress (simulating prolonged standing occlusions)
+  occlusion_duration_sweep:
+    occlusion_durations_frames: [5, 15, 30, 45, 60, 75]
+    num_people: 20
+    seq_length: 250
+
+  # Ablation of Tracker Components Under Dense Crowd (25 people)
+  tracker_ablations:
+    baseline_sort:
+      name: "1_Standard_SORT_IoU_Only"
+      use_appearance: false
+      track_low_thresh: 0.60    # Single stage
+      max_lost_time: 1
+      freeze_appearance_on_occlusion: false
+
+    bytetrack_motion:
+      name: "2_ByteTrack_TwoStage_Motion"
+      use_appearance: false
+      track_low_thresh: 0.15    # Two-stage score recovery
+      max_lost_time: 30
+      freeze_appearance_on_occlusion: false
+
+    deepsort_naive_app:
+      name: "3_DeepSORT_Unweighted_Appearance"
+      use_appearance: true
+      lambda_appearance: 0.50
+      track_low_thresh: 0.60
+      max_lost_time: 30
+      freeze_appearance_on_occlusion: false # Contaminates appearance during occlusion!
+
+    proposed_oar_tracker:
+      name: "4_Proposed_OAR_Tracker_Full"
+      use_appearance: true
+      lambda_appearance: 0.40
+      track_low_thresh: 0.15    # Two-stage recovery
+      max_lost_time: 60         # Re-association bank
+      freeze_appearance_on_occlusion: true # Quality-weighted template preservation

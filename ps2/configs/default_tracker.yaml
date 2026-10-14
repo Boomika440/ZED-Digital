@@ -1,0 +1,51 @@
+# Default Configuration for Identity-Preserving Multi-Object Tracker (OAR-Tracker)
+# Project: Zed Digital - PS-2
+
+tracker:
+  name: "OcclusionAwareReIDTracker"
+  
+  # Two-Stage Detection Score Gating (ByteTrack-style occlusion recovery)
+  track_high_thresh: 0.60        # Detections >= 0.60 matched in Stage 1 against active tracks
+  track_low_thresh: 0.15         # Detections in [0.15, 0.60) recovered in Stage 2 (occluded bodies)
+  new_track_thresh: 0.70         # High-confidence threshold required to spawn a tentative track
+  
+  # Association Cost Thresholds
+  match_thresh_stage1: 0.75      # Max combined (motion + appearance) cost for stage 1
+  match_thresh_stage2: 0.55      # Max IoU cost for stage 2 (recovering partially occluded detections)
+  reassociation_thresh: 0.35     # Max cosine distance to re-associate lost identity from memory bank
+  
+  # Track Lifecycle Management
+  min_hits_to_confirm: 3         # Consecutive detections required to confirm tentative track
+  max_lost_time: 60              # Frames (2.0s at 30 FPS) to maintain lost identity in memory bank
+  
+  # Appearance & Occlusion Robustness
+  use_appearance: true
+  lambda_appearance: 0.40        # Weight: total_cost = lambda_app * app_cost + (1 - lambda_app) * motion_cost
+  inter_track_overlap_thresh: 0.35 # Inter-track bounding box overlap ratio triggering occlusion flag
+  appearance_ema_alpha: 0.90     # EMA momentum for unoccluded appearances: temp = alpha * temp + (1 - alpha) * new
+  freeze_appearance_on_occlusion: true # Strictly freezes appearance template when overlapping to avoid contamination
+
+kalman:
+  std_weight_position: 0.05      # Position noise coefficient relative to box height
+  std_weight_velocity: 0.00625   # Velocity noise coefficient relative to box height
+  velocity_damping_factor: 0.95  # Damps velocity prediction during lost/occluded frames to stop runaway drift
+  use_mahalanobis_gate: true     # Apply chi-square motion gating
+  mahalanobis_threshold: 9.488   # 95% confidence gating for 4 DOF [x, y, a, h]
+
+simulation:
+  seq_length: 300
+  img_width: 1920
+  img_height: 1080
+  fps: 30
+  gate_x_min: 750
+  gate_x_max: 1170               # Narrow crowded choke-point gate area (420px wide)
+  gate_y_min: 200
+  gate_y_max: 880
+  default_num_people: 18         # Standard density
+  occlusion_intensity: 0.75      # Probability of mutual crossing trajectories in gate
+
+evaluation:
+  iou_threshold: 0.50            # Standard MOTChallenge IoU evaluation threshold
+  output_dir: "./results"
+  save_plots: true
+  render_video: false

@@ -1,0 +1,58 @@
+# Ablation Studies Configuration for PS-1
+# Isolating the contribution of each algorithmic component:
+# 1. Baseline: Standard Closed-Set Cross-Entropy + Global Average Pooling
+# 2. + Margin Formulation: Sub-Center ArcFace Loss
+# 3. + Hard-Negative Mining: Batch-Hard Triplet Loss with low-variance mining
+# 4. + Discriminative Part Attention: Fine-grained spatial part representation
+# 5. + Score Calibration & Unknown Rejection: Extreme Value Theory (EVT) + Ambiguity Margin Rejection
+
+ablations:
+  baseline_softmax:
+    name: "M0_Baseline_Softmax"
+    margin_loss_type: "softmax"
+    use_hard_triplet: false
+    use_part_attention: false
+    calibration_method: "none"
+    ambiguity_margin: 0.0
+
+  margin_arcface:
+    name: "M1_SubCenter_ArcFace"
+    margin_loss_type: "subcenter_arcface"
+    margin: 0.35
+    use_hard_triplet: false
+    use_part_attention: false
+    calibration_method: "none"
+    ambiguity_margin: 0.0
+
+  margin_plus_hard_triplet:
+    name: "M2_ArcFace_Plus_HardTriplet"
+    margin_loss_type: "subcenter_arcface"
+    margin: 0.35
+    use_hard_triplet: true
+    triplet_margin: 0.3
+    use_part_attention: false
+    calibration_method: "none"
+    ambiguity_margin: 0.0
+
+  part_attention_enhanced:
+    name: "M3_Part_Attention_Enhanced"
+    margin_loss_type: "subcenter_arcface"
+    margin: 0.35
+    use_hard_triplet: true
+    triplet_margin: 0.3
+    use_part_attention: true
+    num_parts: 4
+    calibration_method: "none"
+    ambiguity_margin: 0.0
+
+  full_calibrated_openset:
+    name: "M4_Full_Framework_Calibrated"
+    margin_loss_type: "subcenter_arcface"
+    margin: 0.35
+    use_hard_triplet: true
+    triplet_margin: 0.3
+    use_part_attention: true
+    num_parts: 4
+    calibration_method: "evt_weibull"
+    tail_size: 20
+    ambiguity_margin: 0.08
